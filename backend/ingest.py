@@ -1,30 +1,35 @@
-"""Data ingestion — fetch from yfinance and upsert into the database.
+"""Data ingestion — fetch from yfinance and write into the database.
 
 Run a full refresh:
-    python -m backend.ingest
+    python -m backend.ingest                 # 1 year of history (default)
+    python -m backend.ingest --period 6mo    # less history = faster
+    python -m backend.ingest --workers 12    # more parallelism for the quote calls
 
-This is the script you run on a machine/host *with internet access* (locally,
-or as a scheduled job on the deploy target). It:
-  1. ensures the company rows exist,
-  2. pulls the latest quote + fundamentals for each ticker,
-  3. pulls daily OHLCV history,
-and upserts everything so repeated runs update rows in place rather than
-duplicating them.
+Speed strategy (the slow parts of ingestion are network + DB round-trips):
+  1. All price history is pulled in ONE batched ``yf.download`` call (not 30
+     separate ``.history`` requests).
+  2. Per-company quotes/fundamentals (``.info``) are fetched concurrently with a
+     thread pool.
+  3. Price history is written with a per-ticker DELETE + a single bulk INSERT,
+     instead of thousands of one-row-at-a-time upserts.
 
-`session.merge()` is used for upserts because it is dialect-agnostic (works on
-both SQLite locally and Postgres in production).
+Quotes/companies still use ``session.merge`` (only ~30 rows, dialect-agnostic).
 """
 from __future__ import annotations
 
 import argparse
-import time
+import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 
+import pandas as pd
 import yfinance as yf
 
-from backend.config import COMPANIES, HISTORY_PERIOD, INGEST_DELAY, SECTOR_BY_TICKER
+from backend.config import COMPANIES, HISTORY_PERIOD, TICKERS
 from backend.database import SessionLocal, init_db
 from backend.models import Company, PriceHistory, Quote
+
+DEFAULT_WORKERS = int(os.getenv("FINPULSE_WORKERS", "10"))
 
 
 def _num(value) -> float | None:
@@ -97,44 +102,106 @@ def upsert_quote(db, ticker: str, info: dict) -> None:
     )
 
 
-def upsert_history(db, ticker: str, tk: yf.Ticker, period: str) -> int:
-    hist = tk.history(period=period, auto_adjust=False)
-    if hist is None or hist.empty:
-        return 0
-    n = 0
-    for idx, row in hist.iterrows():
-        db.merge(
-            PriceHistory(
-                ticker=ticker,
-                date=idx.date(),
-                open=_num(row.get("Open")),
-                high=_num(row.get("High")),
-                low=_num(row.get("Low")),
-                close=_num(row.get("Close")),
-                volume=_int(row.get("Volume")),
-            )
+def slice_history(batch: pd.DataFrame, ticker: str) -> pd.DataFrame | None:
+    """Pull one ticker's OHLCV frame out of a batched ``yf.download`` result.
+
+    ``yf.download(..., group_by="ticker")`` returns a column MultiIndex
+    (ticker, field) for multiple tickers, or a flat frame for a single one.
+    """
+    if batch is None or batch.empty:
+        return None
+    try:
+        if isinstance(batch.columns, pd.MultiIndex):
+            if ticker not in batch.columns.get_level_values(0):
+                return None
+            df = batch[ticker]
+        else:
+            df = batch
+    except (KeyError, TypeError):
+        return None
+    df = df.dropna(how="all")
+    return df if not df.empty else None
+
+
+def write_history(db, ticker: str, df: pd.DataFrame) -> int:
+    """Replace a ticker's price history with one bulk insert.
+
+    Because each run refetches the full period, deleting the ticker's rows and
+    bulk-inserting is both correct and far faster than row-by-row upserts: it
+    turns ~250 round-trips into one DELETE + one batched INSERT.
+    """
+    rows = []
+    for idx, row in df.iterrows():
+        close = _num(row.get("Close"))
+        if close is None:
+            continue  # skip holidays / non-trading rows
+        rows.append(
+            {
+                "ticker": ticker,
+                "date": idx.date(),
+                "open": _num(row.get("Open")),
+                "high": _num(row.get("High")),
+                "low": _num(row.get("Low")),
+                "close": close,
+                "volume": _int(row.get("Volume")),
+            }
         )
-        n += 1
-    return n
+    if not rows:
+        return 0
+    db.query(PriceHistory).filter(PriceHistory.ticker == ticker).delete()
+    db.bulk_insert_mappings(PriceHistory, rows)
+    return len(rows)
 
 
-def run(period: str = HISTORY_PERIOD) -> None:
+def fetch_info(ticker: str) -> dict:
+    """Fetch one ticker's quote/fundamentals. Returns {} on any failure."""
+    try:
+        return yf.Ticker(ticker).info or {}
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def run(period: str = HISTORY_PERIOD, workers: int = DEFAULT_WORKERS) -> None:
     init_db()
+
+    # 1) One batched request for ALL price history.
+    print(f"Fetching {period} history for {len(TICKERS)} tickers in one batch...")
+    batch = yf.download(
+        TICKERS,
+        period=period,
+        group_by="ticker",
+        auto_adjust=False,
+        threads=True,
+        progress=False,
+    )
+
+    # 2) Fetch quotes/fundamentals concurrently.
+    print(f"Fetching quotes with {workers} parallel workers...")
+    infos: dict[str, dict] = {}
+    with ThreadPoolExecutor(max_workers=workers) as ex:
+        futures = {ex.submit(fetch_info, t): t for t in TICKERS}
+        for fut in as_completed(futures):
+            infos[futures[fut]] = fut.result()
+
+    # 3) Write everything. Quotes via merge (~30 rows); history via bulk insert.
     db = SessionLocal()
     ok, failed = 0, []
     try:
         for meta in COMPANIES:
             ticker = meta["ticker"]
             try:
-                tk = yf.Ticker(ticker)
-                info = tk.info or {}
-                # yfinance occasionally returns an empty info dict on throttling.
+                info = infos.get(ticker) or {}
                 if not info.get("currentPrice") and not info.get("regularMarketPrice"):
                     raise ValueError("empty quote (possibly rate-limited)")
 
+                df = slice_history(batch, ticker)
+                if df is None:  # fall back to a single-ticker history call
+                    df = yf.Ticker(ticker).history(period=period, auto_adjust=False)
+                    df = df if df is not None and not df.empty else None
+
                 upsert_company(db, meta, info)
                 upsert_quote(db, ticker, info)
-                bars = upsert_history(db, ticker, tk, period)
+                bars = write_history(db, ticker, df) if df is not None else 0
                 db.commit()
                 ok += 1
                 print(f"  ✓ {ticker:<14} price={info.get('currentPrice')!s:<10} bars={bars}")
@@ -142,7 +209,6 @@ def run(period: str = HISTORY_PERIOD) -> None:
                 db.rollback()
                 failed.append((ticker, str(exc)))
                 print(f"  ✗ {ticker:<14} {exc}")
-            time.sleep(INGEST_DELAY)
     finally:
         db.close()
 
@@ -153,7 +219,9 @@ def run(period: str = HISTORY_PERIOD) -> None:
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description="FinPulse data ingestion")
-    ap.add_argument("--period", default=HISTORY_PERIOD, help="history period (e.g. 1y)")
+    ap.add_argument("--period", default=HISTORY_PERIOD, help="history period (e.g. 1y, 6mo)")
+    ap.add_argument("--workers", type=int, default=DEFAULT_WORKERS,
+                    help="parallel workers for quote fetches")
     args = ap.parse_args()
     print("Ingesting market data from yfinance...")
-    run(period=args.period)
+    run(period=args.period, workers=args.workers)
