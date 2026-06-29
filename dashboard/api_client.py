@@ -2,7 +2,11 @@
 
 The dashboard deliberately consumes the *API* (not the DB directly) so the
 project demonstrates the full request flow: Dashboard -> REST API -> DB.
-Set FINPULSE_API_URL to point at a deployed API; defaults to localhost.
+
+The API URL is resolved in this order:
+  1. Streamlit secret  FINPULSE_API_URL   (set in the app's Secrets on Cloud)
+  2. environment var   FINPULSE_API_URL   (for local / other hosts)
+  3. http://127.0.0.1:8000                (local default)
 """
 from __future__ import annotations
 
@@ -10,8 +14,23 @@ import os
 
 import requests
 
-API_URL = os.getenv("FINPULSE_API_URL", "http://127.0.0.1:8000").rstrip("/")
-TIMEOUT = 20
+
+def _resolve_api_url() -> str:
+    # 1) Streamlit Cloud secret (works even if it isn't exported as an env var).
+    try:
+        import streamlit as st
+
+        val = st.secrets.get("FINPULSE_API_URL")
+        if val:
+            return str(val).rstrip("/")
+    except Exception:
+        pass  # no secrets file / not running under Streamlit
+    # 2) environment variable, 3) local default
+    return os.getenv("FINPULSE_API_URL", "http://127.0.0.1:8000").rstrip("/")
+
+
+API_URL = _resolve_api_url()
+TIMEOUT = 30  # Render free tier can cold-start (~30-60s) after idling
 
 
 class APIError(RuntimeError):
