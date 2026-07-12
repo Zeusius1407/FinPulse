@@ -10,14 +10,14 @@ import os
 # --------------------------------------------------------------------------- #
 # Database
 # --------------------------------------------------------------------------- #
-# Local default is a SQLite file. In production, set DATABASE_URL to a Postgres
-# / Supabase connection string, e.g.
+# FinPulse runs on PostgreSQL in every environment (dev/prod parity). The local
+# default points at the Postgres container defined in docker-compose.yml, which
+# ``run_local.sh`` starts for you. In production, set DATABASE_URL to your
+# managed Postgres / Supabase connection string, e.g.
 #   postgresql+psycopg2://user:pass@host:5432/dbname
 # The rest of the app is DB-agnostic because it goes through SQLAlchemy.
-_DEFAULT_SQLITE = "sqlite:///" + os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "finpulse.db"
-)
-DATABASE_URL: str = os.getenv("DATABASE_URL", _DEFAULT_SQLITE)
+_DEFAULT_PG = "postgresql+psycopg2://finpulse:finpulse@localhost:5432/finpulse"
+DATABASE_URL: str = os.getenv("DATABASE_URL", _DEFAULT_PG)
 
 # Render/Heroku hand out a legacy "postgres://" scheme that SQLAlchemy 2.x
 # rejects. Normalise it to the driver-qualified form.
@@ -66,7 +66,7 @@ COMPANIES: list[dict[str, str]] = [
     {"ticker": "HCLTECH.NS",    "name": "HCL Technologies",           "sector": "IT"},
     {"ticker": "NTPC.NS",       "name": "NTPC",                       "sector": "Energy"},
     {"ticker": "POWERGRID.NS",  "name": "Power Grid Corporation",     "sector": "Energy"},
-    {"ticker": "TATAMOTORS.NS", "name": "Tata Motors",                "sector": "Auto"},
+    {"ticker": "ETERNAL.NS",    "name": "Eternal Limited",         "sector": "Consumer"},
     {"ticker": "TATASTEEL.NS",  "name": "Tata Steel",                 "sector": "Materials"},
     {"ticker": "ADANIENT.NS",   "name": "Adani Enterprises",          "sector": "Industrials"},
     {"ticker": "ONGC.NS",       "name": "Oil & Natural Gas Corp",     "sector": "Energy"},

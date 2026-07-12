@@ -148,6 +148,13 @@ def run(seed: int = 42) -> None:
                     updated_at=datetime.utcnow(),
                 )
             )
+            # Flush the parent company/quote rows before the bulk insert of
+            # price_history: bulk_save_objects bypasses the unit-of-work and
+            # emits INSERTs immediately, so without this flush the child rows
+            # would hit the companies FK before the parent exists. (SQLite
+            # ignored this because it doesn't enforce FKs by default; Postgres
+            # does.)
+            db.flush()
             db.bulk_save_objects(
                 [PriceHistory(ticker=ticker, **b) for b in bars]
             )

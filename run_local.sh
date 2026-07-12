@@ -5,6 +5,16 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
+# Start local Postgres (unless DATABASE_URL points somewhere else already).
+if [ -z "${DATABASE_URL:-}" ]; then
+  echo "==> Starting local PostgreSQL (docker compose)"
+  docker compose up -d db
+  echo "==> Waiting for Postgres to become healthy"
+  until [ "$(docker inspect -f '{{.State.Health.Status}}' finpulse-db 2>/dev/null)" = "healthy" ]; do
+    sleep 1
+  done
+fi
+
 echo "==> Ensuring tables exist"
 python -c "from backend.database import init_db; init_db()"
 

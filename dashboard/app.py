@@ -312,5 +312,3 @@ with tab_compare:
                            yaxis_title="Indexed (start = 100)",
                            legend=dict(orientation="h", y=1.02))
         st.plotly_chart(norm, width='stretch')
-
-st.caption("Data via yfinance · FinPulse demo · built with FastAPI + SQLAlchemy + Streamlit")

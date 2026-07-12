@@ -148,6 +148,12 @@ def write_history(db, ticker: str, df: pd.DataFrame) -> int:
         )
     if not rows:
         return 0
+    # Flush any pending parent company/quote merges first. bulk_insert_mappings
+    # issues the child INSERT immediately, and the session runs with
+    # autoflush=False, so without this the price_history rows would reference a
+    # companies row that hasn't been written yet — a FK violation on Postgres
+    # (SQLite silently tolerated it because it doesn't enforce FKs by default).
+    db.flush()
     db.query(PriceHistory).filter(PriceHistory.ticker == ticker).delete()
     db.bulk_insert_mappings(PriceHistory, rows)
     return len(rows)

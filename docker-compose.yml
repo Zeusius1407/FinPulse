@@ -1,0 +1,29 @@
+# Local PostgreSQL for FinPulse development.
+# Matches the default DATABASE_URL in backend/config.py so dev == prod.
+#
+#   docker compose up -d db     # start Postgres in the background
+#   docker compose down         # stop it (data persists in the named volume)
+#   docker compose down -v      # stop it and wipe the data
+#
+# run_local.sh starts this for you automatically.
+
+services:
+  db:
+    image: postgres:16
+    container_name: finpulse-db
+    environment:
+      POSTGRES_USER: finpulse
+      POSTGRES_PASSWORD: finpulse
+      POSTGRES_DB: finpulse
+    ports:
+      - "5432:5432"
+    volumes:
+      - finpulse_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U finpulse -d finpulse"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  finpulse_pgdata:
