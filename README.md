@@ -46,6 +46,20 @@ curl "http://127.0.0.1:8000/market-summary"
 
 ## Notes & limitations
 
+- The entire project can be run locally with the help of docker conatiners. To run (make sure you have docker compose v2 installed on your device):
+```bash
+docker compose up --build
+```
+Then to populate the database, in a different terminal, run:
+```bash
+docker compose run --rm ingest
+```
+Optionally, if the live data returns any sort of error run:
+```bash
+docker compose run --rm -e SEED_ONLY=1 ingest
+```
+to populate the database with synthetic but plausible data.
+The dashboard can be found at http://localhost:8501 and the API docs can be found at http://localhost:8000/docs.
 - **yfinance** is an unofficial Yahoo Finance scraper; it can rate-limit or briefly return empty data.
   Ingestion handles this per-ticker (skip + continue) and `INGEST_DELAY` paces requests. For production
   reliability you'd swap in an official feed (NSE/BSE bhavcopy, or a paid API) behind the same
