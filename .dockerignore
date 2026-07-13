@@ -1,0 +1,30 @@
+# Keep the build context small and free of host-specific junk.
+.git
+.gitignore
+
+# Virtualenvs (this project's venv lives in ./.env) — never copy into the image.
+.env
+.venv
+venv
+env
+
+# Python caches
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Local database files and secrets
+data/*.db
+*.sqlite3
+.streamlit/secrets.toml
+
+# Docker / compose files aren't needed inside the image
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

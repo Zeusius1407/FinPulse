@@ -1,20 +1,14 @@
-# FinPulse dependencies (pinned to the versions this project was built/tested with)
-
-# --- Backend / API ---
 fastapi==0.138.1
 uvicorn[standard]==0.49.0
 sqlalchemy==2.0.51
 pydantic==2.13.4
 
-# --- Database (PostgreSQL — used in every environment) ---
 psycopg2-binary==2.9.9
 
-# --- Data ingestion ---
 yfinance==1.5.1
 pandas==3.0.2
 apscheduler==3.11.3
 
-# --- Dashboard ---
 streamlit==1.58.0
 plotly==6.8.0
 requests==2.33.1
