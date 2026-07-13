@@ -32,16 +32,6 @@ Base URL (local): `http://127.0.0.1:8000` · interactive docs at `/docs` (Swagge
 | GET | `/sectors` | Sector-level aggregates (market cap, avg P/E, avg move). |
 | GET | `/` | Service info / health check. |
 
-Examples:
-
-```bash
-curl "http://127.0.0.1:8000/stocks?sector=IT&sort_by=market_cap&limit=5"
-curl "http://127.0.0.1:8000/stocks/RELIANCE.NS"
-curl "http://127.0.0.1:8000/stocks/TCS.NS/history?period=6mo"
-curl "http://127.0.0.1:8000/compare?tickers=RELIANCE.NS,TCS.NS,INFY.NS"
-curl "http://127.0.0.1:8000/market-summary"
-```
-
 ---
 
 ## Notes & limitations
@@ -59,7 +49,7 @@ curl "http://127.0.0.1:8000/market-summary"
   docker compose run --rm -e SEED_ONLY=1 ingest
   ```
   to populate the database with synthetic but plausible data.
-  The dashboard can be found at http://localhost:8501 and the API docs can be found at http://localhost:8000/docs.
+  The dashboard can be found at `http://localhost:8501` and the API docs can be found at `http://localhost:8000/docs`.
 - **yfinance** is an unofficial Yahoo Finance scraper; it can rate-limit or briefly return empty data.
   Ingestion handles this per-ticker (skip + continue) and `INGEST_DELAY` paces requests. For production
   reliability you'd swap in an official feed (NSE/BSE bhavcopy, or a paid API) behind the same
