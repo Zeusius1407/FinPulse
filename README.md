@@ -49,7 +49,7 @@ Base URL (local): `http://127.0.0.1:8000` · interactive docs at `/docs` (Swagge
   docker compose run --rm -e SEED_ONLY=1 ingest
   ```
   to populate the database with synthetic but plausible data.
-  The dashboard can be found at `http://localhost:8501` and the API docs can be found at `http://localhost:8000/docs`.
+  The dashboard can be found at `http://localhost:8501` and the API docs can be found at `http://localhost:8000/docs`.  
   Teardown: `docker compose down` (keeps the data) or `docker compose down -v` (wipes the database volume).
 - **yfinance** is an unofficial Yahoo Finance scraper; it can rate-limit or briefly return empty data.
   Ingestion handles this per-ticker (skip + continue) and `INGEST_DELAY` paces requests. For production
