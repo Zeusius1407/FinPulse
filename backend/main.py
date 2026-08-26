@@ -40,7 +40,7 @@ async def lifespan(_app: FastAPI):
 app = FastAPI(
     title=API_TITLE,
     version=API_VERSION,
-    description="Aggregated market data and fundamentals for 30 NSE large caps.",
+    description="Aggregated market data and fundamentals for 20 NSE large caps.",
     lifespan=lifespan,
 )
 
