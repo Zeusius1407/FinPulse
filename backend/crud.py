@@ -11,7 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
 from backend import models, schemas
-
+from backend.config import TICKERS
 # Map a human period string to a rough number of calendar days.
 PERIOD_DAYS = {
     "5d": 5,
