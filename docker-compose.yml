@@ -17,6 +17,8 @@
 
 x-app-image: &app-image
   build: .
+  volumes:
+    - .:/app
 
 services:
   db:
