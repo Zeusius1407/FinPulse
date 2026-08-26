@@ -66,7 +66,7 @@ def load_history(ticker: str, period: str):
 # --------------------------------------------------------------------------- #
 # Sidebar
 # --------------------------------------------------------------------------- #
-st.sidebar.title("📈 FinPulse")
+st.sidebar.title("FinPulse")
 st.sidebar.caption("NSE market monitor")
 st.sidebar.write(f"**API:** `{api.base_url()}`")
 if st.sidebar.button("🔄 Refresh data"):
