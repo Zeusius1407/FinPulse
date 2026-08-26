@@ -92,8 +92,6 @@ ticker_to_name = {r["ticker"]: r["name"] for r in stocks}
 label = lambda t: f"{t}  ·  {ticker_to_name.get(t, '')}"  # noqa: E731
 
 st.title("FinPulse — Indian Market Dashboard")
-last = summary.get("last_updated")
-st.caption(f"Tracking {summary['companies_tracked']} NSE companies · last updated {last}")
 
 tab_overview, tab_detail, tab_compare = st.tabs(
     ["🏠 Market Overview", "🔎 Company Detail", "⚖️ Compare"]
