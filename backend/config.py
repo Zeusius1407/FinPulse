@@ -63,16 +63,6 @@ COMPANIES: list[dict[str, str]] = [
     {"ticker": "ULTRACEMCO.NS", "name": "UltraTech Cement",           "sector": "Materials"},
     {"ticker": "WIPRO.NS",      "name": "Wipro",                      "sector": "IT"},
     {"ticker": "NESTLEIND.NS",  "name": "Nestle India",               "sector": "FMCG"},
-    {"ticker": "HCLTECH.NS",    "name": "HCL Technologies",           "sector": "IT"},
-    {"ticker": "NTPC.NS",       "name": "NTPC",                       "sector": "Energy"},
-    {"ticker": "POWERGRID.NS",  "name": "Power Grid Corporation",     "sector": "Energy"},
-    {"ticker": "ETERNAL.NS",    "name": "Eternal Limited",         "sector": "Consumer"},
-    {"ticker": "TATASTEEL.NS",  "name": "Tata Steel",                 "sector": "Materials"},
-    {"ticker": "ADANIENT.NS",   "name": "Adani Enterprises",          "sector": "Industrials"},
-    {"ticker": "ONGC.NS",       "name": "Oil & Natural Gas Corp",     "sector": "Energy"},
-    {"ticker": "COALINDIA.NS",  "name": "Coal India",                 "sector": "Energy"},
-    {"ticker": "JSWSTEEL.NS",   "name": "JSW Steel",                  "sector": "Materials"},
-    {"ticker": "GRASIM.NS",     "name": "Grasim Industries",          "sector": "Materials"},
 ]
 
 TICKERS: list[str] = [c["ticker"] for c in COMPANIES]
