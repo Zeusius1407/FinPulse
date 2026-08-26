@@ -1,7 +1,7 @@
 # FinPulse 📈
 
 A stock-market monitoring platform that aggregates **live and historical market data** plus
-**fundamental metrics** for **30 NSE-listed Indian companies** into a single, interactive dashboard.
+**fundamental metrics** for **20 NSE-listed Indian companies** into a single, interactive dashboard.
 
 Built as: **yfinance → SQLAlchemy/DB → FastAPI REST API → Streamlit dashboard.**
 
