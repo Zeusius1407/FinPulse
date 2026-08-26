@@ -37,7 +37,7 @@ HISTORY_PERIOD = os.getenv("FINPULSE_HISTORY_PERIOD", "1y")
 INGEST_DELAY = float(os.getenv("FINPULSE_INGEST_DELAY", "0.4"))
 
 # --------------------------------------------------------------------------- #
-# Company universe — 30 liquid NSE large caps (the MVP needs >= 20).
+# Company universe — 20 liquid NSE large caps (the MVP needs >= 20).
 # yfinance uses the ".NS" suffix for NSE-listed equities.
 # Sector tags are kept locally so the dashboard works even if a provider omits
 # them, and so sector aggregation is consistent.
