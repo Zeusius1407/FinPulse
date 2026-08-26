@@ -166,6 +166,14 @@ def fetch_info(ticker: str) -> dict:
     except Exception:  # noqa: BLE001
         return {}
 
+def prune_untracked(db) -> int:
+    """Delete companies no longer listed in config.COMPANIES."""
+    stale = db.query(Company).filter(Company.ticker.notin_(TICKERS)).all()
+    for c in stale:
+        db.delete(c)          # ORM delete -> cascades to quotes + price_history
+    db.commit()
+    return len(stale)
+
 
 def run(period: str = HISTORY_PERIOD, workers: int = DEFAULT_WORKERS) -> None:
     init_db()
@@ -189,7 +197,7 @@ def run(period: str = HISTORY_PERIOD, workers: int = DEFAULT_WORKERS) -> None:
         for fut in as_completed(futures):
             infos[futures[fut]] = fut.result()
 
-    # 3) Write everything. Quotes via merge (~30 rows); history via bulk insert.
+    # 3) Write everything. Quotes via merge; history via bulk insert.
     db = SessionLocal()
     ok, failed = 0, []
     try:
@@ -211,10 +219,14 @@ def run(period: str = HISTORY_PERIOD, workers: int = DEFAULT_WORKERS) -> None:
                 db.commit()
                 ok += 1
                 print(f"  ✓ {ticker:<14} price={info.get('currentPrice')!s:<10} bars={bars}")
+                
             except Exception as exc:  # noqa: BLE001 — keep going on per-ticker errors
                 db.rollback()
                 failed.append((ticker, str(exc)))
                 print(f"  ✗ {ticker:<14} {exc}")
+        removed = prune_untracked(db)
+        if removed:
+            print(f"Pruned {removed} companies no longer tracked.")
     finally:
         db.close()
 
