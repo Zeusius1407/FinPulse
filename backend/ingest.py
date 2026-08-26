@@ -224,9 +224,6 @@ def run(period: str = HISTORY_PERIOD, workers: int = DEFAULT_WORKERS) -> None:
                 db.rollback()
                 failed.append((ticker, str(exc)))
                 print(f"  ✗ {ticker:<14} {exc}")
-        removed = prune_untracked(db)
-        if removed:
-            print(f"Pruned {removed} companies no longer tracked.")
     finally:
         db.close()
 
