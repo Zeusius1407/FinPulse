@@ -24,7 +24,7 @@ PERIOD_DAYS = {
 
 
 def list_companies(db: Session) -> list[models.Company]:
-    stmt = select(models.Company).options(joinedload(models.Company.quote)).order_by(
+    stmt = select(models.Company).options(joinedload(models.Company.quote)).where(models.Company.ticker.in_(TICKERS)).order_by(
         models.Company.ticker
     )
     return list(db.scalars(stmt).unique())
