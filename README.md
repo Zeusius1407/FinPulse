@@ -52,8 +52,8 @@ Base URL (local): `http://127.0.0.1:8000` · interactive docs at `/docs` (Swagge
   The dashboard can be found at `http://localhost:8501` and the API docs can be found at `http://localhost:8000/docs`.  
   Teardown: `docker compose down` (keeps the data) or `docker compose down -v` (wipes the database volume).
 - **yfinance** is an unofficial Yahoo Finance scraper; it can rate-limit or briefly return empty data.
-  Ingestion handles this per-ticker (skip + continue) and `INGEST_DELAY` paces requests. For production
-  reliability you'd swap in an official feed (NSE/BSE bhavcopy, or a paid API) behind the same
+  Ingestion handles this per-ticker (skip + continue). For production
+  reliability we would swap in an official feed (NSE/BSE bhavcopy, or a paid API) behind the same
   `ingest.py` interface — the rest of the stack is unchanged.
 - Fundamentals like P/E and market cap reflect Yahoo's snapshot at ingest time.
 - The synthetic seeder (`scripts/seed_demo.py`) is for demo/testing only; its numbers are plausible
