@@ -8,7 +8,7 @@ Built as: **yfinance → SQLAlchemy/DB → FastAPI REST API → Streamlit dashbo
 ```
 ┌────────────┐   ingest    ┌──────────────┐   SQLAlchemy   ┌─────────────┐   HTTP/JSON   ┌──────────────┐
 │  yfinance  │ ──────────▶ │   Database   │ ◀────────────▶ │  FastAPI    │ ◀───────────▶ │  Streamlit   │
-│ (NSE data) │  upsert     │ SQLite / PG  │   ORM models   │  REST API   │   requests    │  Dashboard   │
+│ (NSE data) │  upsert     │   Postgres   │   ORM models   │  REST API   │   requests    │  Dashboard   │
 └────────────┘             └──────────────┘                └─────────────┘               └──────────────┘
    backend/ingest.py        backend/models.py               backend/main.py               dashboard/app.py
 ```
